@@ -1,0 +1,7 @@
+# Keep files that must parse as Unix text LF regardless of platform or
+# core.autocrlf settings (CRLF breaks automark.sh in bash).
+* text=auto
+*.sh text eol=lf
+Dockerfile text eol=lf
+compose.yml text eol=lf
+compose.yaml text eol=lf

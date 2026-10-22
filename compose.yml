@@ -1,0 +1,44 @@
+# COMS3011A Lab 3 - two-service stack for the SvelteKit guestbook app:
+# the app (built from ./Dockerfile) plus the official postgres image.
+#
+#   docker compose up --build     -> http://localhost:3000
+#   docker compose down           -> stop (data kept in the db-data volume)
+#   docker compose down -v        -> stop and delete the data
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Publish the app's port so the site is reachable in a browser.
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://guestbook:guestbook@db:5432/guestbook
+    # Don't start the app until the database is actually ready to accept
+    # connections (healthcheck below), not merely started.
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: guestbook
+      POSTGRES_PASSWORD: guestbook
+      POSTGRES_DB: guestbook
+    # Named volume: guestbook entries survive `docker compose down/up`.
+    # The port is not published to the host - only the app needs it.
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # Waits until postgres accepts connections, not just until the
+    # container is running.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guestbook -d guestbook"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:
